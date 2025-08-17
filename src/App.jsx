@@ -1,16 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
-import {
-  Container,
-  Typography,
-  Box,
-  List,
-  ListItem,
-  IconButton,
-  TextField,
-  Button,
-  Card,
-  CardContent
-} from '@mui/material';
+import { Routes, Route } from 'react-router-dom';
+import Navbar from './components/Navbar';
+import { Container, Typography, List, ListItem, IconButton, TextField, Button, Card, CardContent, Box, Tabs, Tab, Grid } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
 import CheckIcon from '@mui/icons-material/Check';
 import reactLogo from './assets/react.svg'
@@ -23,7 +14,13 @@ function App() {
     'Steelers',
     'AI',
   ]);
-  const [selectedTopic, setSelectedTopic] = useState('');
+  const [selectedTopic, setSelectedTopic] = useState('Trump');
+  // Ensure selectedTopic is always valid when topics change
+  useEffect(() => {
+    if (!topics.includes(selectedTopic)) {
+      setSelectedTopic(topics[0] || '');
+    }
+  }, [topics]);
   const [results, setResults] = useState([]);
   const [allResults, setAllResults] = useState({});
   // Helper to fetch news for a topic
@@ -111,58 +108,84 @@ function App() {
   };
 
   return (
-    <Container maxWidth="sm" sx={{ py: 4 }}>
-      <Typography variant="h3" align="center" gutterBottom>Vibe News</Typography>
-      <Typography variant="h6" gutterBottom>Edit topics:</Typography>
-      <List sx={{ mb: 2 }}>
-        {topics.map((topic, idx) => (
-          <ListItem key={idx} sx={{ display: 'flex', alignItems: 'center', gap: 1 }} disableGutters>
-            <TextField
-              value={topic}
-              onChange={e => handleTopicChange(idx, e.target.value)}
-              variant="outlined"
-              size="small"
-              sx={{ flex: 1 }}
-            />
-            <IconButton color={selectedTopic === topic ? 'primary' : 'default'} onClick={() => handleTopicSelect(topic)}>
-              <CheckIcon />
-            </IconButton>
-            <IconButton color="error" onClick={() => handleRemoveTopic(idx)}>
-              <DeleteIcon />
-            </IconButton>
-          </ListItem>
-        ))}
-      </List>
-      <Box sx={{ display: 'flex', gap: 1, mb: 3 }}>
-        <TextField
-          value={newTopic}
-          onChange={e => setNewTopic(e.target.value)}
-          placeholder="Add new topic..."
-          variant="outlined"
-          size="small"
-          sx={{ flex: 1 }}
-        />
-        <Button variant="contained" onClick={handleAddTopic}>Add</Button>
+    <>
+      <Navbar />
+      <Box sx={{ pt: 10, px: 0, width: '100%' }}>
+        <Routes>
+          <Route path="/" element={
+            <>
+              <Typography variant="h4" gutterBottom align="center">Trending News</Typography>
+              <Box sx={{ display: 'flex', justifyContent: 'center', mb: 3 }}>
+                <Tabs
+                  value={selectedTopic}
+                  onChange={(_, val) => setSelectedTopic(val)}
+                  indicatorColor="primary"
+                  textColor="primary"
+                  variant="scrollable"
+                  scrollButtons="auto"
+                >
+                  {topics.map((topic) => (
+                    <Tab key={topic} label={topic} value={topic} />
+                  ))}
+                </Tabs>
+              </Box>
+              <Grid container spacing={0} sx={{ width: '100%', margin: 0 }}>
+                {(allResults[selectedTopic] || []).map((item, idx) => (
+                  <Grid item xs={12} sm={6} md={4} key={idx} sx={{ p: 0 }}>
+                    <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', border: '1px solid #e0e0e0', boxShadow: 'none', borderRadius: 0 }}>
+                      <CardContent>
+                        <Typography variant="h6" fontWeight="bold" gutterBottom>{item.title}</Typography>
+                        <Typography variant="body2" color="text.secondary">{item.description}</Typography>
+                      </CardContent>
+                    </Card>
+                  </Grid>
+                ))}
+              </Grid>
+              {(!allResults[selectedTopic] || allResults[selectedTopic].length === 0) && (
+                <Typography variant="body1" align="center" sx={{ mt: 4 }}>
+                  No news found for this topic.
+                </Typography>
+              )}
+            </>
+          } />
+          <Route path="/topics" element={
+            <Box sx={{ maxWidth: 800, mx: 'auto', px: 2 }}>
+              <Typography variant="h4" gutterBottom>Manage Topics</Typography>
+              <List sx={{ mb: 2 }}>
+                {topics.map((topic, idx) => (
+                  <ListItem key={idx} sx={{ display: 'flex', alignItems: 'center', gap: 1 }} disableGutters>
+                    <TextField
+                      value={topic}
+                      onChange={e => handleTopicChange(idx, e.target.value)}
+                      variant="outlined"
+                      size="small"
+                      sx={{ flex: 1 }}
+                    />
+                    <IconButton color={selectedTopic === topic ? 'primary' : 'default'} onClick={() => setSelectedTopic(topic)}>
+                      <CheckIcon />
+                    </IconButton>
+                    <IconButton color="error" onClick={() => handleRemoveTopic(idx)}>
+                      <DeleteIcon />
+                    </IconButton>
+                  </ListItem>
+                ))}
+              </List>
+              <Box sx={{ display: 'flex', gap: 1, mb: 3 }}>
+                <TextField
+                  value={newTopic}
+                  onChange={e => setNewTopic(e.target.value)}
+                  placeholder="Add new topic..."
+                  variant="outlined"
+                  size="small"
+                  sx={{ flex: 1 }}
+                />
+                <Button variant="contained" onClick={handleAddTopic}>Add</Button>
+              </Box>
+            </Box>
+          } />
+        </Routes>
       </Box>
-      <Typography variant="h6" gutterBottom>News Results</Typography>
-      {topics.map((topic) => (
-        <Box key={topic} sx={{ mb: 3 }}>
-          <Typography variant="subtitle1" fontWeight="bold" sx={{ mb: 1 }}>{topic}</Typography>
-          <List>
-            {(allResults[topic] || []).map((item, idx) => (
-              <ListItem key={idx} disableGutters>
-                <Card sx={{ width: '100%' }}>
-                  <CardContent>
-                    <Typography variant="subtitle2" fontWeight="bold">{item.title}</Typography>
-                    <Typography variant="body2">{item.description}</Typography>
-                  </CardContent>
-                </Card>
-              </ListItem>
-            ))}
-          </List>
-        </Box>
-      ))}
-    </Container>
+    </>
   );
 }
 
