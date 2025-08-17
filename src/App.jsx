@@ -39,7 +39,9 @@ function App() {
   }, []);
   // Persist topics to IndexedDB whenever they change
   useEffect(() => {
-    set('topics', topics);
+    if (Array.isArray(topics)) {
+      set('topics', topics);
+    }
   }, [topics]);
   // Ensure selectedTopic is always valid when topics change
   useEffect(() => {
