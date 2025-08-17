@@ -13,7 +13,7 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import { Routes, Route } from 'react-router-dom';
 import { get, set } from 'idb-keyval';
 function App() {
-  const [topics, setTopics] = useState([ 'Trump', 'Steelers', 'AI' ]);
+  const [topics, setTopics] = useState();
   const [selectedTopic, setSelectedTopic] = useState('Trump');
   const [results, setResults] = useState([]);
   const [allResults, setAllResults] = useState({});
@@ -27,7 +27,11 @@ function App() {
   // Load topics from IndexedDB on mount
   useEffect(() => {
     get('topics').then(stored => {
-      if (stored && Array.isArray(stored) && stored.length) setTopics(stored);
+      if (Array.isArray(stored)) {
+        setTopics(stored);
+      } else {
+        setTopics(['Trump', 'Steelers', 'AI']);
+      }
     });
   }, []);
   // Persist topics to IndexedDB whenever they change
@@ -36,8 +40,8 @@ function App() {
   }, [topics]);
   // Ensure selectedTopic is always valid when topics change
   useEffect(() => {
-    if (!topics.includes(selectedTopic)) {
-      setSelectedTopic(topics[0] || '');
+    if (!((topics || []).includes(selectedTopic))) {
+      setSelectedTopic((topics && topics[0]) || '');
     }
   }, [topics]);
 
@@ -121,7 +125,7 @@ function App() {
   return (
     <>
       <Navbar />
-  <Box sx={{ pt: 8, px: 0, width: '100%' }}>
+      <Box sx={{ pt: 12, px: 0, width: '100%' }}>
         <Routes>
           <Route path="/" element={
             <>
@@ -135,7 +139,7 @@ function App() {
                   scrollButtons="auto"
                   sx={{ minHeight: 48 }}
                 >
-                  {topics.map((topic) => (
+                  {(topics || []).map((topic) => (
                     <Tab key={topic} label={topic} value={topic} />
                   ))}
                 </Tabs>
@@ -186,10 +190,10 @@ function App() {
             </>
           } />
           <Route path="/topics" element={
-            <Box sx={{ maxWidth: 600, mx: 'auto', pt: 2 }}>
+            <Box sx={{ maxWidth: 600, mx: 'auto', pt: 0 }}>
               <Typography variant="h4" gutterBottom>Manage Topics</Typography>
               <List sx={{ mb: 2 }}>
-                {topics.map((topic, idx) => (
+                {(topics || []).map((topic, idx) => (
                   <ListItem key={idx} sx={{ display: 'flex', alignItems: 'center', gap: 1 }} disableGutters>
                     <TextField
                       value={topic}
