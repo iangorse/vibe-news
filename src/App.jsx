@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { Routes, Route } from 'react-router-dom';
 import Navbar from './components/Navbar';
-import { Container, Typography, List, ListItem, IconButton, TextField, Button, Card, CardContent, Box, Tabs, Tab, Grid, Chip, Dialog, DialogTitle, DialogContent, DialogActions } from '@mui/material';
+import { Container, Typography, List, ListItem, IconButton, TextField, Button, Card, CardContent, CardActionArea, Box, Tabs, Tab, Grid, Chip, Dialog, DialogTitle, DialogContent, DialogActions } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
 import CheckIcon from '@mui/icons-material/Check';
 import reactLogo from './assets/react.svg'
@@ -34,7 +34,7 @@ function App() {
       } else {
         const data = await res.json();
         if (data.articles) {
-          return data.articles.map(a => ({ title: a.title, description: a.description || '' }));
+          return data.articles.map(a => ({ title: a.title, description: a.description || '', url: a.url }));
         } else {
           return [{ title: 'No results', description: 'No news found for this topic.' }];
         }
@@ -134,12 +134,30 @@ function App() {
               <Grid container spacing={0} sx={{ width: '100%', margin: 0 }}>
                 {(allResults[selectedTopic] || []).map((item, idx) => (
                   <Grid item xs={12} sm={6} md={4} key={idx} sx={{ p: 0 }}>
-                    <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', border: '1px solid #e0e0e0', boxShadow: 'none', borderRadius: 0 }}>
-                      <CardContent>
-                        <Typography variant="h6" fontWeight="bold" gutterBottom>{item.title}</Typography>
-                        <Typography variant="body2" color="text.secondary">{item.description}</Typography>
-                      </CardContent>
-                    </Card>
+                    {item.url ? (
+                      <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', border: '1px solid #e0e0e0', boxShadow: 'none', borderRadius: 0 }}>
+                        <CardActionArea component="a" href={item.url} target="_blank" rel="noopener noreferrer" sx={{ height: '100%' }}>
+                          <CardContent>
+                            <Typography variant="h6" fontWeight="bold" gutterBottom color="primary">{item.title}</Typography>
+                            <Typography variant="body2" color="text.secondary">{item.description}</Typography>
+                          </CardContent>
+                        </CardActionArea>
+                        <CardContent sx={{ pt: 0 }}>
+                          <Typography variant="body2" sx={{ mt: 1 }}>
+                            <a href={item.url} target="_blank" rel="noopener noreferrer" style={{ color: '#1976d2', wordBreak: 'break-all' }}>
+                              {item.url}
+                            </a>
+                          </Typography>
+                        </CardContent>
+                      </Card>
+                    ) : (
+                      <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', border: '1px solid #e0e0e0', boxShadow: 'none', borderRadius: 0 }}>
+                        <CardContent>
+                          <Typography variant="h6" fontWeight="bold" gutterBottom>{item.title}</Typography>
+                          <Typography variant="body2" color="text.secondary">{item.description}</Typography>
+                        </CardContent>
+                      </Card>
+                    )}
                   </Grid>
                 ))}
               </Grid>
