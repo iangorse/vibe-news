@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { Routes, Route } from 'react-router-dom';
 import Navbar from './components/Navbar';
-import { Container, Typography, List, ListItem, IconButton, TextField, Button, Card, CardContent, Box, Tabs, Tab, Grid } from '@mui/material';
+import { Container, Typography, List, ListItem, IconButton, TextField, Button, Card, CardContent, Box, Tabs, Tab, Grid, Chip, Dialog, DialogTitle, DialogContent, DialogActions } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
 import CheckIcon from '@mui/icons-material/Check';
 import reactLogo from './assets/react.svg'
@@ -64,6 +64,7 @@ function App() {
     // eslint-disable-next-line
   }, [topics]);
   const [newTopic, setNewTopic] = useState('');
+  const [addDialogOpen, setAddDialogOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [rateLimited, setRateLimited] = useState(false);
   const rateLimitTimeout = useRef(null);
@@ -110,12 +111,11 @@ function App() {
   return (
     <>
       <Navbar />
-      <Box sx={{ pt: 10, px: 0, width: '100%' }}>
+  <Box sx={{ pt: 8, px: 0, width: '100%' }}>
         <Routes>
           <Route path="/" element={
             <>
-              <Typography variant="h4" gutterBottom align="center">Trending News</Typography>
-              <Box sx={{ display: 'flex', justifyContent: 'center', mb: 3 }}>
+              <Box sx={{ display: 'flex', justifyContent: 'center', mb: 3, mt: -4 }}>
                 <Tabs
                   value={selectedTopic}
                   onChange={(_, val) => setSelectedTopic(val)}
@@ -123,12 +123,14 @@ function App() {
                   textColor="primary"
                   variant="scrollable"
                   scrollButtons="auto"
+                  sx={{ minHeight: 48 }}
                 >
                   {topics.map((topic) => (
                     <Tab key={topic} label={topic} value={topic} />
                   ))}
                 </Tabs>
               </Box>
+              <Typography variant="h4" gutterBottom align="center">Trending News</Typography>
               <Grid container spacing={0} sx={{ width: '100%', margin: 0 }}>
                 {(allResults[selectedTopic] || []).map((item, idx) => (
                   <Grid item xs={12} sm={6} md={4} key={idx} sx={{ p: 0 }}>
@@ -149,38 +151,40 @@ function App() {
             </>
           } />
           <Route path="/topics" element={
-            <Box sx={{ maxWidth: 800, mx: 'auto', px: 2 }}>
+            <Box sx={{ maxWidth: 600, mx: 'auto', pt: 2, textAlign: 'center' }}>
               <Typography variant="h4" gutterBottom>Manage Topics</Typography>
-              <List sx={{ mb: 2 }}>
+              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, justifyContent: 'center', mb: 4 }}>
                 {topics.map((topic, idx) => (
-                  <ListItem key={idx} sx={{ display: 'flex', alignItems: 'center', gap: 1 }} disableGutters>
-                    <TextField
-                      value={topic}
-                      onChange={e => handleTopicChange(idx, e.target.value)}
-                      variant="outlined"
-                      size="small"
-                      sx={{ flex: 1 }}
-                    />
-                    <IconButton color={selectedTopic === topic ? 'primary' : 'default'} onClick={() => setSelectedTopic(topic)}>
-                      <CheckIcon />
-                    </IconButton>
-                    <IconButton color="error" onClick={() => handleRemoveTopic(idx)}>
-                      <DeleteIcon />
-                    </IconButton>
-                  </ListItem>
+                  <Chip
+                    key={topic}
+                    label={topic}
+                    color={selectedTopic === topic ? 'primary' : 'default'}
+                    onClick={() => setSelectedTopic(topic)}
+                    onDelete={() => handleRemoveTopic(idx)}
+                    deleteIcon={<DeleteIcon />}
+                    sx={{ fontSize: '1rem', px: 2 }}
+                  />
                 ))}
-              </List>
-              <Box sx={{ display: 'flex', gap: 1, mb: 3 }}>
-                <TextField
-                  value={newTopic}
-                  onChange={e => setNewTopic(e.target.value)}
-                  placeholder="Add new topic..."
-                  variant="outlined"
-                  size="small"
-                  sx={{ flex: 1 }}
-                />
-                <Button variant="contained" onClick={handleAddTopic}>Add</Button>
               </Box>
+              <Button variant="contained" onClick={() => setAddDialogOpen(true)} sx={{ mb: 2 }}>Add Topic</Button>
+              <Dialog open={addDialogOpen} onClose={() => setAddDialogOpen(false)}>
+                <DialogTitle>Add New Topic</DialogTitle>
+                <DialogContent>
+                  <TextField
+                    autoFocus
+                    margin="dense"
+                    label="Topic Name"
+                    type="text"
+                    fullWidth
+                    value={newTopic}
+                    onChange={e => setNewTopic(e.target.value)}
+                  />
+                </DialogContent>
+                <DialogActions>
+                  <Button onClick={() => setAddDialogOpen(false)}>Cancel</Button>
+                  <Button onClick={() => { handleAddTopic(); setAddDialogOpen(false); }}>Add</Button>
+                </DialogActions>
+              </Dialog>
             </Box>
           } />
         </Routes>
