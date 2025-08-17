@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import {
   Container,
   Typography,
@@ -25,37 +25,70 @@ function App() {
   ]);
   const [selectedTopic, setSelectedTopic] = useState('');
   const [results, setResults] = useState([]);
-  const [newTopic, setNewTopic] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [rateLimited, setRateLimited] = useState(false);
-  const rateLimitTimeout = useRef(null);
-
-  const handleTopicSelect = async (topic) => {
-    if (rateLimited) return;
-    setSelectedTopic(topic);
-    setLoading(true);
-    setResults([]);
-  // NewsAPI key from environment variable
-  const API_KEY = import.meta.env.VITE_NEWSAPI_KEY;
+  const [allResults, setAllResults] = useState({});
+  // Helper to fetch news for a topic
+  const fetchNewsForTopic = async (topic) => {
+    const API_KEY = import.meta.env.VITE_NEWSAPI_KEY;
     const url = `https://newsapi.org/v2/everything?q=${encodeURIComponent(topic)}&apiKey=${API_KEY}&pageSize=5`;
     try {
       const res = await fetch(url);
       if (res.status === 429) {
-        setRateLimited(true);
-        rateLimitTimeout.current = setTimeout(() => setRateLimited(false), 60000); // 1 min cooldown
-        setResults([{ title: 'Rate limit exceeded', description: 'Please wait before making another request.' }]);
+        return [{ title: 'Rate limit exceeded', description: 'Please wait before making another request.' }];
       } else {
         const data = await res.json();
         if (data.articles) {
-          setResults(data.articles.map(a => ({ title: a.title, description: a.description || '' })));
+          return data.articles.map(a => ({ title: a.title, description: a.description || '' }));
         } else {
-          setResults([{ title: 'No results', description: 'No news found for this topic.' }]);
+          return [{ title: 'No results', description: 'No news found for this topic.' }];
         }
       }
     } catch (err) {
-      setResults([{ title: 'Error', description: 'Failed to fetch news.' }]);
+      return [{ title: 'Error', description: 'Failed to fetch news.' }];
     }
-    setLoading(false);
+  };
+  // On initial load, fetch news for all topics (if not cached)
+  useEffect(() => {
+    const fetchAll = async () => {
+      let updatedAllResults = {};
+      let updatedCache = { ...cache };
+      for (const topic of topics) {
+        if (updatedCache[topic]) {
+          updatedAllResults[topic] = updatedCache[topic];
+        } else {
+          const news = await fetchNewsForTopic(topic);
+          updatedAllResults[topic] = news;
+          updatedCache[topic] = news;
+        }
+      }
+      setAllResults(updatedAllResults);
+      setCache(updatedCache);
+    };
+    fetchAll();
+    // eslint-disable-next-line
+  }, [topics]);
+  const [newTopic, setNewTopic] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [rateLimited, setRateLimited] = useState(false);
+  const rateLimitTimeout = useRef(null);
+  const [cache, setCache] = useState(() => {
+    try {
+      const stored = localStorage.getItem('newsCache');
+      return stored ? JSON.parse(stored) : {};
+    } catch {
+      return {};
+    }
+  });
+
+  // Persist cache to localStorage whenever it changes
+  useEffect(() => {
+    try {
+      localStorage.setItem('newsCache', JSON.stringify(cache));
+    } catch {}
+  }, [cache]);
+
+  const handleTopicSelect = (topic) => {
+    setSelectedTopic(topic);
+    setResults(allResults[topic] || []);
   };
 
   const handleTopicChange = (idx, value) => {
@@ -111,29 +144,24 @@ function App() {
         />
         <Button variant="contained" onClick={handleAddTopic}>Add</Button>
       </Box>
-      {selectedTopic && (
-        <Typography variant="h6" gutterBottom>Results for "{selectedTopic}"</Typography>
-      )}
-      {loading && (
-        <Typography variant="body1" color="text.secondary" sx={{ mb: 2 }}>Loading news...</Typography>
-      )}
-      <List>
-        {results.map((item, idx) => (
-          <ListItem key={idx} disableGutters>
-            <Card sx={{ width: '100%' }}>
-              <CardContent>
-                <Typography variant="subtitle1" fontWeight="bold">{item.title}</Typography>
-                <Typography variant="body2">{item.description}</Typography>
-              </CardContent>
-            </Card>
-          </ListItem>
-        ))}
-      </List>
-      {rateLimited && (
-        <Typography variant="body2" color="error" sx={{ mt: 2 }}>
-          API rate limit reached. Please wait a minute before searching again.
-        </Typography>
-      )}
+      <Typography variant="h6" gutterBottom>News Results</Typography>
+      {topics.map((topic) => (
+        <Box key={topic} sx={{ mb: 3 }}>
+          <Typography variant="subtitle1" fontWeight="bold" sx={{ mb: 1 }}>{topic}</Typography>
+          <List>
+            {(allResults[topic] || []).map((item, idx) => (
+              <ListItem key={idx} disableGutters>
+                <Card sx={{ width: '100%' }}>
+                  <CardContent>
+                    <Typography variant="subtitle2" fontWeight="bold">{item.title}</Typography>
+                    <Typography variant="body2">{item.description}</Typography>
+                  </CardContent>
+                </Card>
+              </ListItem>
+            ))}
+          </List>
+        </Box>
+      ))}
     </Container>
   );
 }
