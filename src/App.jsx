@@ -15,6 +15,7 @@ import { get, set } from 'idb-keyval';
 import TopicsTabs from './components/TopicsTabs';
 import NewsGrid from './components/NewsGrid';
 import ManageTopics from './components/ManageTopics';
+import Sidebar from './components/Sidebar';
 function App() {
   const [topics, setTopics] = useState();
   const [selectedTopic, setSelectedTopic] = useState('Trump');
@@ -130,23 +131,24 @@ function App() {
   return (
     <>
       <Navbar />
-      <Box sx={{ pt: 12, px: 0, width: '100%' }}>
-        <Routes>
-          <Route path="/" element={
-            <>
-              <Box sx={{ display: 'flex', justifyContent: 'center', mb: 3, mt: -4 }}>
-                <TopicsTabs topics={topics} selectedTopic={selectedTopic} setSelectedTopic={setSelectedTopic} />
-              </Box>
+      <Routes>
+        <Route path="/" element={
+          <Box sx={{ display: 'flex', pt: 8 }}>
+            <Sidebar topics={topics} selectedTopic={selectedTopic} setSelectedTopic={setSelectedTopic} />
+            <Box sx={{ flex: 1, px: 2, width: '100%', maxWidth: 1200, margin: '0 auto' }}>
               <Typography variant="h4" gutterBottom align="center">Trending News</Typography>
+              <Typography variant="h6" align="center" sx={{ mb: 3, color: 'text.secondary' }}>{selectedTopic}</Typography>
               <NewsGrid articles={allResults[selectedTopic] || []} />
               {(!allResults[selectedTopic] || allResults[selectedTopic].length === 0) && (
                 <Typography variant="body1" align="center" sx={{ mt: 4 }}>
                   No news found for this topic.
                 </Typography>
               )}
-            </>
-          } />
-          <Route path="/topics" element={
+            </Box>
+          </Box>
+        } />
+        <Route path="/topics" element={
+          <Box sx={{ pt: 8 }}>
             <ManageTopics
               topics={topics}
               selectedTopic={selectedTopic}
@@ -157,9 +159,9 @@ function App() {
               setNewTopic={setNewTopic}
               handleAddTopic={handleAddTopic}
             />
-          } />
-        </Routes>
-      </Box>
+          </Box>
+        } />
+      </Routes>
     </>
   );
 }

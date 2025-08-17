@@ -3,9 +3,9 @@ import { Grid, Card, CardContent, CardActionArea, Typography, Box } from '@mui/m
 
 export default function NewsGrid({ articles }) {
   return (
-    <Grid container spacing={{ xs: 2, sm: 3, md: 4 }} sx={{ maxWidth: { xs: '100%', md: 1200 }, margin: '0 auto', width: '100%' }}>
+  <Box sx={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: { xs: 2, sm: 3, md: 4 }, maxWidth: 1200, margin: '0 auto', width: '100%' }}>
       {(articles || []).map((item, idx) => (
-        <Grid item xs={12} sm={6} md={4} lg={3} xl={2} key={idx} sx={{ display: 'flex' }}>
+    <Box key={idx} sx={{ flex: '1 1 300px', minWidth: 260, maxWidth: 400, display: 'flex' }}>
           {item.url ? (
             <Card sx={{ height: '100%', minHeight: 400, width: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', border: '1px solid #e0e0e0', boxShadow: 'none', borderRadius: 0, flex: 1 }}>
               <CardActionArea component="a" href={item.url} target="_blank" rel="noopener noreferrer" sx={{ height: '100%' }}>
@@ -37,8 +37,8 @@ export default function NewsGrid({ articles }) {
               </CardContent>
             </Card>
           )}
-        </Grid>
+    </Box>
       ))}
-    </Grid>
+  </Box>
   );
 }
