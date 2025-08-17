@@ -12,6 +12,9 @@ import CheckIcon from '@mui/icons-material/Check';
 import DeleteIcon from '@mui/icons-material/Delete';
 import { Routes, Route } from 'react-router-dom';
 import { get, set } from 'idb-keyval';
+import TopicsTabs from './components/TopicsTabs';
+import NewsGrid from './components/NewsGrid';
+import ManageTopics from './components/ManageTopics';
 function App() {
   const [topics, setTopics] = useState();
   const [selectedTopic, setSelectedTopic] = useState('Trump');
@@ -130,58 +133,10 @@ function App() {
           <Route path="/" element={
             <>
               <Box sx={{ display: 'flex', justifyContent: 'center', mb: 3, mt: -4 }}>
-                <Tabs
-                  value={selectedTopic}
-                  onChange={(_, val) => setSelectedTopic(val)}
-                  indicatorColor="primary"
-                  textColor="primary"
-                  variant="scrollable"
-                  scrollButtons="auto"
-                  sx={{ minHeight: 48 }}
-                >
-                  {(topics || []).map((topic) => (
-                    <Tab key={topic} label={topic} value={topic} />
-                  ))}
-                </Tabs>
+                <TopicsTabs topics={topics} selectedTopic={selectedTopic} setSelectedTopic={setSelectedTopic} />
               </Box>
               <Typography variant="h4" gutterBottom align="center">Trending News</Typography>
-              <Grid container spacing={3} sx={{ width: '100%', margin: 0 }}>
-                {(allResults[selectedTopic] || []).map((item, idx) => (
-                  <Grid item xs={12} sm={6} md={4} key={idx} sx={{ p: 0 }}>
-                    {item.url ? (
-                      <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', border: '1px solid #e0e0e0', boxShadow: 'none', borderRadius: 0 }}>
-                        <CardActionArea component="a" href={item.url} target="_blank" rel="noopener noreferrer" sx={{ height: '100%' }}>
-                          <Box sx={{ position: 'relative', width: '100%', height: 180, overflow: 'hidden', mb: 1 }}>
-                            {item.image && (
-                              <img src={item.image} alt={item.title} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
-                            )}
-                            <Box sx={{ position: 'absolute', bottom: 0, left: 0, width: '100%', bgcolor: 'rgba(0,0,0,0.55)', color: '#fff', px: 2, py: 1 }}>
-                              <Typography variant="h6" fontWeight="bold" gutterBottom sx={{ color: '#fff', textShadow: '0 1px 4px rgba(0,0,0,0.7)' }}>{item.title}</Typography>
-                            </Box>
-                          </Box>
-                          <CardContent sx={{ pt: 2 }}>
-                            <Typography variant="body2" color="text.primary" sx={{ mb: 1 }}>{item.description}</Typography>
-                          </CardContent>
-                        </CardActionArea>
-                        <CardContent sx={{ pt: 0 }}>
-                          <Typography variant="body2" sx={{ mt: 1 }}>
-                            <a href={item.url} target="_blank" rel="noopener noreferrer" style={{ color: '#1976d2', wordBreak: 'break-all' }}>
-                              {item.url}
-                            </a>
-                          </Typography>
-                        </CardContent>
-                      </Card>
-                    ) : (
-                      <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', border: '1px solid #e0e0e0', boxShadow: 'none', borderRadius: 0 }}>
-                        <CardContent>
-                          <Typography variant="h6" fontWeight="bold" gutterBottom>{item.title}</Typography>
-                          <Typography variant="body2" color="text.secondary">{item.description}</Typography>
-                        </CardContent>
-                      </Card>
-                    )}
-                  </Grid>
-                ))}
-              </Grid>
+              <NewsGrid articles={allResults[selectedTopic] || []} />
               {(!allResults[selectedTopic] || allResults[selectedTopic].length === 0) && (
                 <Typography variant="body1" align="center" sx={{ mt: 4 }}>
                   No news found for this topic.
@@ -190,44 +145,16 @@ function App() {
             </>
           } />
           <Route path="/topics" element={
-            <Box sx={{ maxWidth: 600, mx: 'auto', pt: 0 }}>
-              <Typography variant="h4" gutterBottom>Manage Topics</Typography>
-              <List sx={{ mb: 2 }}>
-                {(topics || []).map((topic, idx) => (
-                  <ListItem key={idx} sx={{ display: 'flex', alignItems: 'center', gap: 1 }} disableGutters>
-                    <TextField
-                      value={topic}
-                      onChange={e => handleTopicChange(idx, e.target.value)}
-                      variant="outlined"
-                      size="small"
-                      sx={{ flex: 1 }}
-                    />
-                    <IconButton color={selectedTopic === topic ? 'primary' : 'default'} onClick={() => setSelectedTopic(topic)}>
-                      <CheckIcon />
-                    </IconButton>
-                    <IconButton color="error" onClick={() => handleRemoveTopic(idx)}>
-                      <DeleteIcon />
-                    </IconButton>
-                  </ListItem>
-                ))}
-              </List>
-              <Box sx={{ display: 'flex', gap: 1, mb: 3 }}>
-                <TextField
-                  value={newTopic}
-                  onChange={e => setNewTopic(e.target.value)}
-                  onKeyDown={e => {
-                    if (e.key === 'Enter') {
-                      handleAddTopic();
-                    }
-                  }}
-                  placeholder="Add new topic..."
-                  variant="outlined"
-                  size="small"
-                  sx={{ flex: 1 }}
-                />
-                <Button variant="contained" onClick={handleAddTopic}>Add</Button>
-              </Box>
-            </Box>
+            <ManageTopics
+              topics={topics}
+              selectedTopic={selectedTopic}
+              setSelectedTopic={setSelectedTopic}
+              handleTopicChange={handleTopicChange}
+              handleRemoveTopic={handleRemoveTopic}
+              newTopic={newTopic}
+              setNewTopic={setNewTopic}
+              handleAddTopic={handleAddTopic}
+            />
           } />
         </Routes>
       </Box>
