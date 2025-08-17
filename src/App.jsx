@@ -1,28 +1,57 @@
-import { useState, useRef, useEffect } from 'react';
-import { Routes, Route } from 'react-router-dom';
+import React, { useState, useEffect, useRef } from 'react';
 import Navbar from './components/Navbar';
-import { Container, Typography, List, ListItem, IconButton, TextField, Button, Card, CardContent, CardActionArea, Box, Tabs, Tab, Grid, Chip, Dialog, DialogTitle, DialogContent, DialogActions } from '@mui/material';
-import DeleteIcon from '@mui/icons-material/Delete';
+import { Box } from '@mui/material';
+import { Tabs, Tab } from '@mui/material';
+import { Typography } from '@mui/material';
+import { Grid } from '@mui/material';
+import { List, ListItem } from '@mui/material';
+import { TextField } from '@mui/material';
+import { IconButton } from '@mui/material';
+import { Card, CardContent, CardActionArea, Button } from '@mui/material';
 import CheckIcon from '@mui/icons-material/Check';
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
-
+import DeleteIcon from '@mui/icons-material/Delete';
+import { Routes, Route } from 'react-router-dom';
+import { get, set } from 'idb-keyval';
 function App() {
-  const [topics, setTopics] = useState([
-    'Trump',
-    'Steelers',
-    'AI',
-  ]);
+  const [topics, setTopics] = useState([ 'Trump', 'Steelers', 'AI' ]);
   const [selectedTopic, setSelectedTopic] = useState('Trump');
+  const [results, setResults] = useState([]);
+  const [allResults, setAllResults] = useState({});
+  const [newTopic, setNewTopic] = useState('');
+  const [addDialogOpen, setAddDialogOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [rateLimited, setRateLimited] = useState(false);
+  const rateLimitTimeout = useRef(null);
+  const [cache, setCache] = useState({});
+
+  // Load topics from IndexedDB on mount
+  useEffect(() => {
+    get('topics').then(stored => {
+      if (stored && Array.isArray(stored) && stored.length) setTopics(stored);
+    });
+  }, []);
+  // Persist topics to IndexedDB whenever they change
+  useEffect(() => {
+    set('topics', topics);
+  }, [topics]);
   // Ensure selectedTopic is always valid when topics change
   useEffect(() => {
     if (!topics.includes(selectedTopic)) {
       setSelectedTopic(topics[0] || '');
     }
   }, [topics]);
-  const [results, setResults] = useState([]);
-  const [allResults, setAllResults] = useState({});
+
+  // Load news cache from IndexedDB on mount
+  useEffect(() => {
+    get('newsCache').then(stored => {
+      if (stored && typeof stored === 'object') setCache(stored);
+    });
+  }, []);
+  // Persist news cache to IndexedDB whenever it changes
+  useEffect(() => {
+    set('newsCache', cache);
+  }, [cache]);
+
   // Helper to fetch news for a topic
   const fetchNewsForTopic = async (topic) => {
     const API_KEY = import.meta.env.VITE_NEWSAPI_KEY;
@@ -43,6 +72,7 @@ function App() {
       return [{ title: 'Error', description: 'Failed to fetch news.' }];
     }
   };
+
   // On initial load, fetch news for all topics (if not cached)
   useEffect(() => {
     const fetchAll = async () => {
@@ -63,26 +93,6 @@ function App() {
     fetchAll();
     // eslint-disable-next-line
   }, [topics]);
-  const [newTopic, setNewTopic] = useState('');
-  const [addDialogOpen, setAddDialogOpen] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [rateLimited, setRateLimited] = useState(false);
-  const rateLimitTimeout = useRef(null);
-  const [cache, setCache] = useState(() => {
-    try {
-      const stored = localStorage.getItem('newsCache');
-      return stored ? JSON.parse(stored) : {};
-    } catch {
-      return {};
-    }
-  });
-
-  // Persist cache to localStorage whenever it changes
-  useEffect(() => {
-    try {
-      localStorage.setItem('newsCache', JSON.stringify(cache));
-    } catch {}
-  }, [cache]);
 
   const handleTopicSelect = (topic) => {
     setSelectedTopic(topic);
