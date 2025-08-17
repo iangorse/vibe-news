@@ -16,11 +16,28 @@ import TopicsTabs from './components/TopicsTabs';
 import NewsGrid from './components/NewsGrid';
 import ManageTopics from './components/ManageTopics';
 import Sidebar from './components/Sidebar';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 function App() {
-  const [topics, setTopics] = useState();
+  const queryClient = new QueryClient();
+
+  // All state and handlers remain the same
+  const [topics, setTopics] = useState([]);
+
+  // Load topics from IndexedDB on mount
+  useEffect(() => {
+    get('topics').then(saved => {
+      if (Array.isArray(saved) && saved.length > 0) {
+        setTopics(saved);
+      }
+    });
+  }, []);
+
+  // Save topics to IndexedDB whenever they change
+  useEffect(() => {
+    set('topics', topics);
+  }, [topics]);
   const [selectedTopic, setSelectedTopic] = useState('Trump');
-  const [results, setResults] = useState([]);
-  const [allResults, setAllResults] = useState({});
   const [newTopic, setNewTopic] = useState('');
   const [addDialogOpen, setAddDialogOpen] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -28,44 +45,12 @@ function App() {
   const rateLimitTimeout = useRef(null);
   const [cache, setCache] = useState({});
 
-  // Load topics from IndexedDB on mount
-  useEffect(() => {
-    get('topics').then(stored => {
-      if (Array.isArray(stored)) {
-        setTopics(stored);
-      } else {
-        setTopics(['Trump', 'Steelers', 'AI']);
-      }
-    });
-  }, []);
-  // Persist topics to IndexedDB whenever they change
-  useEffect(() => {
-    if (Array.isArray(topics)) {
-      set('topics', topics);
-    }
-  }, [topics]);
-  // Ensure selectedTopic is always valid when topics change
-  useEffect(() => {
-    if (!((topics || []).includes(selectedTopic))) {
-      setSelectedTopic((topics && topics[0]) || '');
-    }
-  }, [topics]);
-
-  // Load news cache from IndexedDB on mount
-  useEffect(() => {
-    get('newsCache').then(stored => {
-      if (stored && typeof stored === 'object') setCache(stored);
-    });
-  }, []);
-  // Persist news cache to IndexedDB whenever it changes
-  useEffect(() => {
-    set('newsCache', cache);
-  }, [cache]);
+  // (Removed legacy news cache and fetchAll logic; now handled by React Query)
 
   // Helper to fetch news for a topic
   const fetchNewsForTopic = async (topic) => {
     const API_KEY = import.meta.env.VITE_NEWSAPI_KEY;
-    const url = `https://newsapi.org/v2/everything?q=${encodeURIComponent(topic)}&apiKey=${API_KEY}&pageSize=5`;
+  const url = `https://newsapi.org/v2/everything?q=${encodeURIComponent(topic)}&apiKey=${API_KEY}&pageSize=10`;
     try {
       const res = await fetch(url);
       if (res.status === 429) {
@@ -83,30 +68,46 @@ function App() {
     }
   };
 
-  // On initial load, fetch news for all topics (if not cached)
-  useEffect(() => {
-    const fetchAll = async () => {
-      let updatedAllResults = {};
-      let updatedCache = { ...cache };
-      for (const topic of topics) {
-        if (updatedCache[topic]) {
-          updatedAllResults[topic] = updatedCache[topic];
-        } else {
-          const news = await fetchNewsForTopic(topic);
-          updatedAllResults[topic] = news;
-          updatedCache[topic] = news;
-        }
-      }
-      setAllResults(updatedAllResults);
-      setCache(updatedCache);
-    };
-    fetchAll();
-    // eslint-disable-next-line
-  }, [topics]);
+  // Child component for home page, inside QueryClientProvider
+  function HomeContent() {
+    const { data: newsResults = [], isLoading, isError } = useQuery({
+      queryKey: ['news', selectedTopic],
+      queryFn: () => fetchNewsForTopic(selectedTopic),
+      enabled: !!selectedTopic,
+      staleTime: 1000 * 60 * 5, // 5 minutes
+      cacheTime: 1000 * 60 * 30, // 30 minutes
+    });
+    return (
+      <Box sx={{ display: 'flex', pt: 8 }}>
+        <Sidebar topics={topics} selectedTopic={selectedTopic} setSelectedTopic={setSelectedTopic} />
+        <Box sx={{ flex: 1, px: 2, width: '100%', maxWidth: 1200, margin: '0 auto' }}>
+          <Typography variant="h4" gutterBottom align="center">Trending News</Typography>
+          <Typography variant="h6" align="center" sx={{ mb: 3, color: 'text.secondary' }}>{selectedTopic}</Typography>
+          {isLoading ? (
+            <Typography variant="body1" align="center" sx={{ mt: 4 }}>
+              Loading news...
+            </Typography>
+          ) : isError ? (
+            <Typography variant="body1" align="center" sx={{ mt: 4 }}>
+              Error loading news.
+            </Typography>
+          ) : (
+            <>
+              <NewsGrid articles={newsResults} />
+              {(newsResults.length === 0 || (newsResults[0] && newsResults[0].title === 'No results')) && (
+                <Typography variant="body1" align="center" sx={{ mt: 4 }}>
+                  No news found for this topic.
+                </Typography>
+              )}
+            </>
+          )}
+        </Box>
+      </Box>
+    );
+  }
 
   const handleTopicSelect = (topic) => {
     setSelectedTopic(topic);
-    setResults(allResults[topic] || []);
   };
 
   const handleTopicChange = (idx, value) => {
@@ -129,24 +130,10 @@ function App() {
   };
 
   return (
-    <>
+    <QueryClientProvider client={queryClient}>
       <Navbar />
       <Routes>
-        <Route path="/" element={
-          <Box sx={{ display: 'flex', pt: 8 }}>
-            <Sidebar topics={topics} selectedTopic={selectedTopic} setSelectedTopic={setSelectedTopic} />
-            <Box sx={{ flex: 1, px: 2, width: '100%', maxWidth: 1200, margin: '0 auto' }}>
-              <Typography variant="h4" gutterBottom align="center">Trending News</Typography>
-              <Typography variant="h6" align="center" sx={{ mb: 3, color: 'text.secondary' }}>{selectedTopic}</Typography>
-              <NewsGrid articles={allResults[selectedTopic] || []} />
-              {(!allResults[selectedTopic] || allResults[selectedTopic].length === 0) && (
-                <Typography variant="body1" align="center" sx={{ mt: 4 }}>
-                  No news found for this topic.
-                </Typography>
-              )}
-            </Box>
-          </Box>
-        } />
+        <Route path="/" element={<HomeContent />} />
         <Route path="/topics" element={
           <Box sx={{ pt: 8 }}>
             <ManageTopics
@@ -162,7 +149,7 @@ function App() {
           </Box>
         } />
       </Routes>
-    </>
+    </QueryClientProvider>
   );
 }
 
