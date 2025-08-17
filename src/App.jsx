@@ -169,40 +169,43 @@ function App() {
             </>
           } />
           <Route path="/topics" element={
-            <Box sx={{ maxWidth: 600, mx: 'auto', pt: 2, textAlign: 'center' }}>
+            <Box sx={{ maxWidth: 600, mx: 'auto', pt: 2 }}>
               <Typography variant="h4" gutterBottom>Manage Topics</Typography>
-              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, justifyContent: 'center', mb: 4 }}>
+              <List sx={{ mb: 2 }}>
                 {topics.map((topic, idx) => (
-                  <Chip
-                    key={topic}
-                    label={topic}
-                    color={selectedTopic === topic ? 'primary' : 'default'}
-                    onClick={() => setSelectedTopic(topic)}
-                    onDelete={() => handleRemoveTopic(idx)}
-                    deleteIcon={<DeleteIcon />}
-                    sx={{ fontSize: '1rem', px: 2 }}
-                  />
+                  <ListItem key={idx} sx={{ display: 'flex', alignItems: 'center', gap: 1 }} disableGutters>
+                    <TextField
+                      value={topic}
+                      onChange={e => handleTopicChange(idx, e.target.value)}
+                      variant="outlined"
+                      size="small"
+                      sx={{ flex: 1 }}
+                    />
+                    <IconButton color={selectedTopic === topic ? 'primary' : 'default'} onClick={() => setSelectedTopic(topic)}>
+                      <CheckIcon />
+                    </IconButton>
+                    <IconButton color="error" onClick={() => handleRemoveTopic(idx)}>
+                      <DeleteIcon />
+                    </IconButton>
+                  </ListItem>
                 ))}
+              </List>
+              <Box sx={{ display: 'flex', gap: 1, mb: 3 }}>
+                <TextField
+                  value={newTopic}
+                  onChange={e => setNewTopic(e.target.value)}
+                  onKeyDown={e => {
+                    if (e.key === 'Enter') {
+                      handleAddTopic();
+                    }
+                  }}
+                  placeholder="Add new topic..."
+                  variant="outlined"
+                  size="small"
+                  sx={{ flex: 1 }}
+                />
+                <Button variant="contained" onClick={handleAddTopic}>Add</Button>
               </Box>
-              <Button variant="contained" onClick={() => setAddDialogOpen(true)} sx={{ mb: 2 }}>Add Topic</Button>
-              <Dialog open={addDialogOpen} onClose={() => setAddDialogOpen(false)}>
-                <DialogTitle>Add New Topic</DialogTitle>
-                <DialogContent>
-                  <TextField
-                    autoFocus
-                    margin="dense"
-                    label="Topic Name"
-                    type="text"
-                    fullWidth
-                    value={newTopic}
-                    onChange={e => setNewTopic(e.target.value)}
-                  />
-                </DialogContent>
-                <DialogActions>
-                  <Button onClick={() => setAddDialogOpen(false)}>Cancel</Button>
-                  <Button onClick={() => { handleAddTopic(); setAddDialogOpen(false); }}>Add</Button>
-                </DialogActions>
-              </Dialog>
             </Box>
           } />
         </Routes>
