@@ -3,11 +3,11 @@ import { Grid, Card, CardContent, CardActionArea, Typography, Box } from '@mui/m
 
 export default function NewsGrid({ articles }) {
   return (
-    <Grid container spacing={3} sx={{ width: '100%', margin: 0 }}>
+    <Grid container spacing={{ xs: 2, sm: 3, md: 4 }} sx={{ maxWidth: { xs: '100%', md: 1200 }, margin: '0 auto', width: '100%' }}>
       {(articles || []).map((item, idx) => (
-        <Grid item xs={12} sm={6} md={4} key={idx} sx={{ p: 0 }}>
+        <Grid item xs={12} sm={6} md={4} lg={3} xl={2} key={idx} sx={{ display: 'flex' }}>
           {item.url ? (
-            <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', border: '1px solid #e0e0e0', boxShadow: 'none', borderRadius: 0 }}>
+            <Card sx={{ height: '100%', minHeight: 400, width: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', border: '1px solid #e0e0e0', boxShadow: 'none', borderRadius: 0, flex: 1 }}>
               <CardActionArea component="a" href={item.url} target="_blank" rel="noopener noreferrer" sx={{ height: '100%' }}>
                 <Box sx={{ position: 'relative', width: '100%', height: 180, overflow: 'hidden', mb: 1 }}>
                   {item.image && (
